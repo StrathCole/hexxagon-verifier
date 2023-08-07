@@ -49,7 +49,7 @@ unset GITHUB_TOKEN
 Make the file executable:  
 `chmod 700 /home/myuser/hexx-verify.sh`
 
-Create a cronjob with `sudo nano /etc/cron.d/verifier` and add the content:
+Create a cronjob with `sudo nano /etc/cron.d/verifier` and add the content:  
 `*/30 * * * * myuser /home/myuser/hexx-verify.sh`
 
 Make sure that `myuser` has write access to `/var/www/verifier/html/result.json`.

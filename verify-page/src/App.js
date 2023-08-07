@@ -3,7 +3,7 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import WorkflowFileCheck from './components/WorkflowFileCheck';
 import FileCheckList from './components/FileCheckList';
-import { Box, Link, Tabs, Tab } from '@mui/material';
+import { Box, Link, Tabs, Tab, Tooltip } from '@mui/material';
 
 function App() {
     const [result, setResult] = useState({});
@@ -30,7 +30,7 @@ function App() {
     }, []);
     
     return (
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{mt: 4}}>
             <Typography variant="h4" component="h1" gutterBottom>
                 Check for Terra Classic Deployments
             </Typography>
@@ -41,11 +41,11 @@ function App() {
                 Last Check: {new Date(result?.last_check * 1000).toLocaleString()}
             </Typography>
 
-            <Tabs value={tabValue} onChange={handleTabChange} sx={{mb: 3}}>
+            <Tabs value={tabValue} onChange={handleTabChange} sx={{mt: 6, mb: 3}}>
               <Tab label={<Box>Home</Box>} value={0} />
                 <Tab label={
                     <Box>
-                        Terra Classic Station
+                        Station
                         <Box component="span" 
                         ml={2} 
                         bgcolor={result?.station?.status_ok ? 'green' : 'red'} 
@@ -58,7 +58,7 @@ function App() {
                 } value={1} />
                 <Tab label={
                     <Box>
-                        Terra Classic Finder
+                        Finder
                         <Box component="span" 
                         ml={2} 
                         bgcolor={result?.finder?.status_ok ? 'green' : 'red'} 
@@ -69,12 +69,40 @@ function App() {
                         </Box>
                     </Box>
                 } value={2} />
+                <Tab label={
+                    <Box>
+                        Chrome Extension
+                        <Box component="span" 
+                        ml={2} 
+                        bgcolor={result?.extension_chrome?.status_ok ? 'green' : 'red'} 
+                        color="white" 
+                        p={1} 
+                        borderRadius="4px">
+                            {result?.extension_chrome?.status_ok ? 'Pass' : 'Fail'}
+                        </Box>
+                        {(result?.extension_chrome?.updating === true) && <Tooltip title={`The extension is currently being updated from version ${result?.extension_chrome?.published_version} to ${result?.extension_chrome?.deployed_version}. This notice is shown until the app store published the pending update.`}><Box component="span" ml={0} bgcolor="orange" color="white" p={1} borderRadius="4px">Updating</Box></Tooltip>}
+                    </Box>
+                } value={3} />
+                <Tab label={
+                    <Box>
+                        Firefox Extension
+                        <Box component="span" 
+                        ml={2} 
+                        bgcolor={result?.extension_firefox?.status_ok ? 'green' : 'red'} 
+                        color="white" 
+                        p={1} 
+                        borderRadius="4px">
+                            {result?.extension_firefox?.status_ok ? 'Pass' : 'Fail'}
+                        </Box>
+                        {(result?.extension_firefox?.updating === true) && <Tooltip title={`The extension is currently being updated from version ${result?.extension_firefox?.published_version} to ${result?.extension_firefox?.deployed_version}. This notice is shown until the app store published the pending update.`}><Box component="span" ml={0} bgcolor="orange" color="white" p={1} borderRadius="4px">Updating</Box></Tooltip>}
+                    </Box>
+                } value={4} />
              </Tabs>
 
             {tabValue === 0 && (
               <>
               <Typography variant="body1" component="p" gutterBottom>
-                This page shall verify the integrity of the files deployed on station.terraclassic.community and finder.terraclassic.community.
+                This page shall verify the integrity of the files deployed on station.terraclassic.community, finder.terraclassic.community and the Firefox/Chrome extensions.
                 <br />
                 This is achieved by pulling the latest github actions run for each repository and comparing the hashes of the files deployed on the server with those in the repository.
                 </Typography>
@@ -105,6 +133,26 @@ function App() {
                 
                 {result?.finder?.workflow_file && <WorkflowFileCheck workflowFile={result.finder.workflow_file} />}
                 {result?.finder?.deployed_files && <FileCheckList fileChecks={result.finder.deployed_files} />}
+                </>
+              )}
+             {tabValue === 3 && result?.extension_chrome && (
+              <>
+                <Typography variant="body1" component="p" gutterBottom>
+                  <Link href={result?.extension_chrome?.latest_run_url} target='_blank' rel='noopener noreferer'>Latest Run</Link>
+                </Typography>
+                
+                {result?.extension_chrome?.workflow_file && <WorkflowFileCheck workflowFile={result.extension_chrome.workflow_file} />}
+                {result?.extension_chrome?.deployed_files && <FileCheckList fileChecks={result.extension_chrome.deployed_files} />}
+                </>
+              )}
+             {tabValue === 4 && result?.extension_firefox && (
+              <>
+                <Typography variant="body1" component="p" gutterBottom>
+                  <Link href={result?.extension_firefox?.latest_run_url} target='_blank' rel='noopener noreferer'>Latest Run</Link>
+                </Typography>
+                
+                {result?.extension_firefox?.workflow_file && <WorkflowFileCheck workflowFile={result.extension_firefox.workflow_file} />}
+                {result?.extension_firefox?.deployed_files && <FileCheckList fileChecks={result.extension_firefox.deployed_files} />}
                 </>
               )}
         </Container>

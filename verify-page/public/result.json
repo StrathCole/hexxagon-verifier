@@ -1,5 +1,5 @@
 {
-  "last_check": 1691183807,
+  "last_check": 1691395254,
   "station": {
     "status_ok": true,
     "latest_run_url": "https://github.com/classic-terra/station/actions/runs/5747277175",
@@ -3028,5 +3028,38 @@
       }
     ]
   },
-  "extension": {}
+  "extension_chrome": {
+    "status_ok": false,
+    "updating": true,
+    "published_version": "1.0.11",
+    "deployed_version": "1.0.14",
+    "latest_run_url": "https://github.com/classic-terra/station-extension/actions/runs/5772858882",
+    "workflow_file": {
+      "changed": false,
+      "hash": "c9ab1dd9f40dd633afffc2c9fbe0bb31",
+      "prev_hash": "c9ab1dd9f40dd633afffc2c9fbe0bb31"
+    },
+    "deployed_files": []
+  },
+  "extension_firefox": {
+    "status_ok": false,
+    "updating": false,
+    "published_version": "",
+    "deployed_version": "",
+    "latest_run_url": "",
+    "latest_commit_url": "",
+    "workflow_file": {
+      "changed": false,
+      "hash": "",
+      "prev_hash": ""
+    },
+    "deployed_files": [
+      {
+        "file": "manifest.json",
+        "hash": "",
+        "deployed_hash": "",
+        "ok": false
+      }
+    ]
+  }
 }

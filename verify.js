@@ -504,11 +504,11 @@ async function verifyHash(hash, url, repoName) {
 }
 
 fetchLatestWorkflowRun("station")
-    /*.then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
+    .then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
     .then((runs) => verifyHashes(runs, "station"))
     .then(() => fetchLatestWorkflowRun("finder"))
     .then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
-    .then((runs) => verifyHashes(runs, "finder"))*/
+    .then((runs) => verifyHashes(runs, "finder"))
     .then(() => fetchLatestWorkflowRun("station-extension", 'chrome', 3))
     .then((run) => downloadAndUnzipArtifact(run, 'MD5 Chrome Extension Checksum File'))
     .then((runs) => verifyExtensionHashes(runs, 'chrome'))

@@ -83,7 +83,7 @@ function App() {
                         {(result?.extension_chrome?.updating === true) && <Tooltip title={`The extension is currently being updated from version ${result?.extension_chrome?.published_version} to ${result?.extension_chrome?.deployed_version}. This notice is shown until the app store published the pending update.`}><Box component="span" ml={0} bgcolor="orange" color="white" p={1} borderRadius="4px">Updating</Box></Tooltip>}
                     </Box>
                 } value={3} />
-                <Tab label={
+                {/*<Tab label={
                     <Box>
                         Firefox Extension
                         <Box component="span" 
@@ -96,7 +96,7 @@ function App() {
                         </Box>
                         {(result?.extension_firefox?.updating === true) && <Tooltip title={`The extension is currently being updated from version ${result?.extension_firefox?.published_version} to ${result?.extension_firefox?.deployed_version}. This notice is shown until the app store published the pending update.`}><Box component="span" ml={0} bgcolor="orange" color="white" p={1} borderRadius="4px">Updating</Box></Tooltip>}
                     </Box>
-                } value={4} />
+                } value={4} />*/}
              </Tabs>
 
             {tabValue === 0 && (
@@ -145,7 +145,7 @@ function App() {
                 {result?.extension_chrome?.deployed_files && <FileCheckList fileChecks={result.extension_chrome.deployed_files} />}
                 </>
               )}
-             {tabValue === 4 && result?.extension_firefox && (
+             {/*tabValue === 4 && result?.extension_firefox && (
               <>
                 <Typography variant="body1" component="p" gutterBottom>
                   <Link href={result?.extension_firefox?.latest_run_url} target='_blank' rel='noopener noreferer'>Latest Run</Link>
@@ -154,7 +154,7 @@ function App() {
                 {result?.extension_firefox?.workflow_file && <WorkflowFileCheck workflowFile={result.extension_firefox.workflow_file} />}
                 {result?.extension_firefox?.deployed_files && <FileCheckList fileChecks={result.extension_firefox.deployed_files} />}
                 </>
-              )}
+             )*/}
         </Container>
     );
 }

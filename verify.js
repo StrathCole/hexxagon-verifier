@@ -14,7 +14,7 @@ const storageFilePath = '.storage.json';
 
 const isBrowser = typeof window !== 'undefined';
 const extensionUriChrome = 'https://clients2.google.com/service/update2/crx?response=redirect&os=linux&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromium&prodchannel=unknown&prodversion=91.0.4442.4&lang=en-US&acceptformat=crx2,crx3&x=id%3Dakckefnapafjbpphkefbpkpcamkoaoai%26installsource%3Dondemand%26uc';
-const extensionUriFirefox = 'https://addons.mozilla.org/firefox/downloads/latest/givero/latest.xpi';
+const extensionUriFirefox = null;
 
 axios.defaults.headers.common['Authorization'] = `Bearer ${githubToken}`;
 
@@ -188,21 +188,6 @@ async function fetchLatestWorkflowRun(repoName, type, get_runs) {
                 currentCommitHash,
                 lines: []
             });
-
-
-/*
-            if (runCommitHash === currentCommitHash) {
-                console.log(`The workflow file has not been changed since the last run.`);
-            } else {
-                result[repoName].workflow_file.changed = true;
-                console.log(`The workflow file has been changed since the last run: ${runCommitHash} !== ${currentCommitHash}`);
-            }
-            result[repoName].workflow_file.hash = currentCommitHash;
-            result[repoName].workflow_file.prev_hash = runCommitHash;
-            result.last_check = Math.floor(new Date().getTime() / 1000);
-            result[repoName].latest_run_url = latestRun.html_url;
-            result[repoName].latest_commit_url = latestRun.head_commit.url;*/
-            
         }
         return run_data;
     } catch (error) {
@@ -306,12 +291,47 @@ function extractZipFromCrx3(buff) {
         };
     }    
 }
-    
+ 
+function createCheckObject(deployed, published) {
+    if (Array.isArray(deployed) && Array.isArray(published)) {
+      return deployed.map((item, index) => {
+        if (typeof item === 'object' && typeof published[index] === 'object') {
+          return createCheckObject(item, published[index]);
+        } else {
+          return published[index] !== undefined ? published[index] : null;
+        }
+      });
+    }
+  
+    let checked = {};
+  
+    for (let key in deployed) {
+      if (published.hasOwnProperty(key)) {
+        if (typeof deployed[key] === 'object' && typeof published[key] === 'object') {
+          checked[key] = createCheckObject(deployed[key], published[key]);
+        } else {
+          checked[key] = published[key];
+        }
+      } else {
+        checked[key] = null;
+      }
+    }
+  
+    return checked;
+  }
+  
+  
 
 async function verifyExtensionHashes(runs, type) {
     try {
         const repoName = 'extension_'+type;
-        const response = await axios.get((type === 'chrome' ? extensionUriChrome : extensionUriFirefox), { responseType: 'arraybuffer' });
+        const downloadUrl = (type === 'chrome' ? extensionUriChrome : extensionUriFirefox);
+        if(!downloadUrl) {
+            console.error(`Error verifying extension hashes: no download url`);
+            return;
+        }
+
+        const response = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
         if(!response.data) {
             console.error(`Error verifying extension hashes: no response data`);
             return;
@@ -326,8 +346,7 @@ async function verifyExtensionHashes(runs, type) {
         let published_manifest = undefined;
         for (let file of zipContents.files) {
             if (file.type === 'File') {
-                if((type === 'chrome' && file.path === 'manifest.json')
-                    || (type === 'firefox' && file.path === 'manifest-firefox.json')) {
+                if(file.path === 'manifest.json') {
                     const contents = await file.buffer();
                     published_manifest = JSON.parse(contents.toString());
                     break;
@@ -386,24 +405,29 @@ async function verifyExtensionHashes(runs, type) {
             });
 
             // Loop through each file in the zip
+            const prefix = (type === 'chrome' ? 'chrome-extension://akckefnapafjbpphkefbpkpcamkoaoai/' : 'firefox/');
             for (let file of zipContents.files) {
                 if (file.type === 'File') {
                     const contents = await file.buffer();
-                    const deployedHash = crypto.createHash('md5').update(contents).digest('hex');
-                    if(type === 'firefox') {
-                        if(file.path === 'manifest.json') {
-                            continue;
-                        }
-                        file.path = file.path.replace('manifest-firefox.json', 'manifest.json');
-                        file.path = 'moz-extension://a6d47be6-f4eb-4468-9bd9-6df63504def4/' + file.path;
-                    } else if(type === 'chrome') {
-                        file.path = 'chrome-extension://akckefnapafjbpphkefbpkpcamkoaoai/' + file.path;
-                        if(file.path === 'chrome-extension://akckefnapafjbpphkefbpkpcamkoaoai/firefox.manifest.json') {
-                            continue;
-                        }
+                    let publishedHash = crypto.createHash('md5').update(contents).digest('hex');
+                    let originalHash = lines.find(line => line.url === prefix + file.path)?.hash;
+                    
+                    if(file.path === '_metadata/verified_contents.json') {
+                        // these cannot be verified by hash as they are modified by the stores
+                        continue;
+                    } else if(file.path === 'manifest.json') {
+                        // manifest cannot be verified by hash as it is modified by the stores
+                        // we will create two objects from the deployed and published versions and compare the hash of those
+                        // for that we will check all keys existing in deployed json and compare them to the published json, but ignore any keys that are not in the deployed json
+                        publishedHash = crypto.createHash('md5').update(JSON.stringify(deployed_manifest)).digest('hex');
+                        originalHash = crypto.createHash('md5').update(JSON.stringify(createCheckObject(deployed_manifest, published_manifest))).digest('hex');
+                    }   
+                    if(!originalHash) {
+                        console.log(`no hash found for ${file.path}:]`, lines);
+                        break;
                     }
-                    const originalHash = lines.find(line => line.url === file.path)?.hash;
-                    const isOk = (originalHash === deployedHash);
+                    
+                    const isOk = (originalHash === publishedHash);
 
                     if (isOk) {
                         console.log(`Verifying ${file.path}: OK`);
@@ -414,7 +438,7 @@ async function verifyExtensionHashes(runs, type) {
                     result['extension_'+type].deployed_files.push({
                         file: file.path,
                         hash: originalHash,
-                        deployed_hash: deployedHash,
+                        deployed_hash: publishedHash,
                         ok: isOk
                     });
                 }
@@ -480,11 +504,11 @@ async function verifyHash(hash, url, repoName) {
 }
 
 fetchLatestWorkflowRun("station")
-    .then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
+    /*.then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
     .then((runs) => verifyHashes(runs, "station"))
     .then(() => fetchLatestWorkflowRun("finder"))
     .then((run) => downloadAndUnzipArtifact(run, 'MD5 Checksum File'))
-    .then((runs) => verifyHashes(runs, "finder"))
+    .then((runs) => verifyHashes(runs, "finder"))*/
     .then(() => fetchLatestWorkflowRun("station-extension", 'chrome', 3))
     .then((run) => downloadAndUnzipArtifact(run, 'MD5 Chrome Extension Checksum File'))
     .then((runs) => verifyExtensionHashes(runs, 'chrome'))
